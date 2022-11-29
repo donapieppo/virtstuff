@@ -1,0 +1,100 @@
+#!/bin/bash
+
+set -o errexit
+
+export NEWHOST='licence22'
+export DISKSIZE='10G'
+export SWAPSIZE='4G'
+export KVMGROUP='kvmgroup'
+export DISTRIBUTION='bullseye'
+
+([[ -z $NEWHOST ]] || [[ -z $DISKSIZE ]] || [[ -z $SWAPSIZE ]]) && exit 1
+
+echo "creating main /dev/${KVMGROUP}/${NEWHOST}"
+lvcreate -n ${NEWHOST:-pippo123} -L ${DISKSIZE:-15G} $KVMGROUP && mkfs.ext4 /dev/${KVMGROUP}/${NEWHOST:-pippo123}
+echo "creating swap /dev/${KVMGROUP}/${NEWHOST}"
+lvcreate -n ${NEWHOST:-pippo123}-swap -L ${SWAPSIZE:-6G} $KVMGROUP && mkswap /dev/${KVMGROUP}/${NEWHOST:-pippo123}-swap
+
+[[ -d ./a ]] || mkdir -v ./a
+mount -v /dev/kvmgroup/${NEWHOST:-pippo123} ./a
+
+[[ -d ./a/lost+found ]] || exit 0
+
+debootstrap --include=vim,openssh-server,locales,bash-completion,lsof $DISTRIBUTION ./a
+chroot ./a
+
+echo "Please provide a password for the new host"
+passwd root
+
+echo 'Europe/Rome' > /etc/timezone
+ln -sf /usr/share/zoneinfo/Europe/Rome /etc/localtime
+
+echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen
+echo 'it_IT.UTF-8 UTF-8' >> /etc/locale.gen
+locale-gen 
+
+sed -i -e 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+
+echo "/dev/vda /    ext4    errors=remount-ro 0       1" >  /etc/fstab
+echo "/dev/vdb none swap    sw                0       0" >> /etc/fstab
+
+cat > /etc/network/interfaces <<EOF
+auto lo
+iface lo inet loopback
+
+# The primary network interface
+allow-hotplug enp1s0
+iface enp1s0 inet static
+  address 137.204.134.60/24
+  gateway 137.204.134.254
+EOF
+
+echo $NEWHOST > /etc/hostname
+
+cat > /etc/hosts <<EOF
+127.0.0.1      localhost
+137.204.134.60 $NEWHOST.dm.unibo.it $NEWHOST
+
+# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+EOF
+
+cat > /etc/hosts.allow << EOF
+ALL:  127.0.0.1
+#                moretti        pietro         max            backup         backup2        backup3
+sshd:  127.0.0.1 137.204.134.28 137.204.134.32 137.204.134.34 137.204.134.10 137.204.132.15 137.204.134.19
+EOF
+
+echo "ALL: ALL" > /etc/hosts.deny
+
+cat > /etc/apt/sources.list <<EOF
+deb http://debian.mirror.garr.it/debian/ $DISTRIBUTION main contrib non-free
+deb http://security.debian.org/debian-security ${DISTRIBUTION}-security main contrib non-free
+deb http://mi.mirror.garr.it/mirrors/debian/ ${DISTRIBUTION}-updates main contrib non-free
+EOF
+
+apt-get update
+# apt-get install linux-image-cloud-amd64
+
+cat > /root/.bashrc <<EOF
+export PS1='\h 2022:\w\$ '
+umask 022
+
+export LS_OPTIONS='--color=auto'
+alias ls='ls $LS_OPTIONS'
+alias ll='ls $LS_OPTIONS -l'
+alias rm='rm -i'
+alias mv='mv -i'
+alias e='exit'
+EOF
+
+exit
+
+mkdir ./a/root/.ssh
+chmod 700 ./a/root/.ssh/
+rsync -av .ssh/authorized_keys ./a/root/.ssh
+
+umount a  
+
