@@ -1,0 +1,108 @@
+#!/bin/bash
+
+set -o errexit
+
+host=$1
+disk=/dev/kvmgroup/$host
+dir=/root/mounts/$host
+snap=/dev/kvmgroup/snap
+
+[[ -z $host ]] && echo "Please give me a server." && exit 1
+
+echo "lvmirror $host from $disk mounted on $dir with snap $snap"
+
+function check_snap_absent() {
+	if [ -b $1 ]; then
+		echo "Esiste già snap: $1"
+		echo "umount $1 && lvremove $1"
+		exit 1
+	fi
+}
+
+function check_symlink_presence() {
+	if [ -L $1 ]; then
+		echo "Symlink $1 is OK"
+	else
+		echo "Missing symlink $1"
+		exit 1
+	fi
+}
+
+function check_dir_presence() {
+	if [ -d $1 ]; then
+		echo "Dir $1 is OK"
+	else
+		echo "Missing dir $1"
+		exit 1
+	fi
+}
+
+function check_no_kvmgroup_mount() {
+	if (mount | grep -q kvmgroup); then
+		echo "umount kvmgroup before proceding"
+		exit 1
+	fi
+}
+
+function check_no_lost_found_file {
+	if [ -f $1/lost+found ]; then
+		echo "umount $1 before proceding"
+		exit 1
+	fi
+}
+
+# pass host and dir
+function check_hostname_in_etc_hosts() {
+	hosts_file="$2/etc/hosts"
+
+	if [ -f $hosts_file ]; then
+		if grep -q $1 $hosts_file  
+		then
+			echo "OK: $1 is in local $hosts_file"
+		else
+			echo "NO: $1 missing in local $hosts_file" && exit 1
+		fi
+	else
+		echo "NO: Non esiste il file locale $hosts_file" && exit 1
+	fi
+}
+
+check_snap_absent $snap
+check_symlink_presence $disk
+check_dir_presence $dir
+check_no_kvmgroup_mount
+check_no_lost_found_file $dir
+
+lvcreate --size 100M --snapshot --name snap $disk
+mount -o ro -v $snap $dir
+
+check_hostname_in_etc_hosts $host $dir
+
+echo
+echo "IN KVM13"
+echo
+
+if `ssh kvm13 "[ -f ${dir}/etc/hosts ]"`
+then
+	echo "KVM13 OK: montato file system esistente."
+else
+	echo "KVM13: NO ${dir}/etc/hosts. SE PRIMO AVVIO CREA DA ZERO CON"
+	echo "rsync --delete -av /root/mounts/${host}/ kvm13:/root/mounts/${host}/"
+	exit 1
+fi
+
+if `ssh kvm13 "grep -q ${host} ${dir}/etc/hosts"` 
+then
+	echo "KVM13 OK: ${host} si trova in kvm13 nella cartella ${dir}/etc/hosts." 
+else
+        echo "kvm13: No ${host} in ${dir}/etc/hosts"
+        exit 1
+fi
+
+sleep 2
+
+echo "ESEGUO: rsync --delete -av /root/mounts/${host}/ kvm13:/root/mounts/${host}/"
+rsync --delete -av /root/mounts/${host}/ kvm13:/root/mounts/${host}/ 
+
+echo "ESEGUO: umount -v $snap && lvremove -f $snap"
+umount -v $snap && lvremove -f /dev/kvmgroup/snap
