@@ -15,10 +15,11 @@ Boot with direct kernel boot as
   </os>
 ```
 
-## Create new host
+## Create new host.
 
-Edit create-host ad exec
+Edit `create-host` ad exec.
 
-## Mirror / backup host
+## Mirror / backup to remote host.
 
-Edit lvs-mirror and exec
+Edit `lvs-mirror` to mirror lvs disk to remote host
+and exec.
