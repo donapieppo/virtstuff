@@ -2,6 +2,8 @@
 
 set -o errexit
 
+apt-get install debootstrap rsync
+
 export NEWHOST='str963-wilder'
 export IPADDRESS='137.204.134.60'
 export DISKSIZE='40G'
