@@ -2,11 +2,12 @@
 
 set -o errexit
 
-export NEWHOST='tester22'
-export DISKSIZE='20G'
-export SWAPSIZE='4G'
+export NEWHOST='str963-wilder'
+export DISKSIZE='40G'
+export SWAPSIZE='6G'
 export KVMGROUP='kvmgroup'
 export DISTRIBUTION='bullseye'
+export DISTRIBUTION='bookworm'
 
 ([[ -z $NEWHOST ]] || [[ -z $DISKSIZE ]] || [[ -z $SWAPSIZE ]]) && exit 1
 
@@ -79,7 +80,7 @@ EOF
 # apt-get install linux-image-cloud-amd64
 
 cat > /root/.bashrc <<EOF
-export PS1='\h 2022:\w\$ '
+export PS1='\h 2023:\w\$ '
 umask 022
 
 export LS_OPTIONS='--color=auto'
@@ -98,7 +99,7 @@ rsync -av .ssh/authorized_keys ./a/root/.ssh
 
 umount a  
 
-echo "<kernel>/var/lib/libvirt/images/vmlinuz-5.10.0-20-cloud-amd64</kernel>"
-echo "<initrd>/var/lib/libvirt/images/initrd.img-5.10.0-20-cloud-amd64</initrd>"
+echo "<kernel>/var/lib/libvirt/images/vmlinuz-5.10.0-21-cloud-amd64</kernel>"
+echo "<initrd>/var/lib/libvirt/images/initrd.img-5.10.0-21-cloud-amd64</initrd>"
 echo "<cmdline>root=/dev/vda nohibernate noresume</cmdline>"
 
