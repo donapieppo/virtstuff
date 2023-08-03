@@ -6,6 +6,7 @@ set -o errexit
 source ./new_host.cfg
 
 ([[ -z $NEWHOST ]] || [[ -z $DISKSIZE ]] || [[ -z $SWAPSIZE ]]) && exit 1
+[[ -b /dev/${KVMGROUP}/${NEWHOST} ]] && exit 1
 
 apt-get install debootstrap rsync
 
