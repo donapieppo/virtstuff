@@ -8,7 +8,7 @@ source ./new_host.cfg
 ([[ -z $NEWHOST ]] || [[ -z $DISKSIZE ]] || [[ -z $SWAPSIZE ]]) && exit 1
 [[ -b /dev/${KVMGROUP}/${NEWHOST} ]] && exit 1
 
-apt-get install debootstrap rsync
+apt-get install -y debootstrap rsync
 
 echo "creating main /dev/${KVMGROUP}/${NEWHOST}"
 lvcreate -n ${NEWHOST} -L ${DISKSIZE} $KVMGROUP && mkfs.ext4 /dev/${KVMGROUP}/${NEWHOST}
@@ -19,9 +19,9 @@ lvcreate -n ${NEWHOST}-swap -L ${SWAPSIZE} $KVMGROUP && mkswap /dev/${KVMGROUP}/
 mount -v /dev/kvmgroup/${NEWHOST:-pippo123} ./a
 
 # verify empty file system
-[[ -d ./a/lost+found ]] || exit 0
-[[ -d ./a/etc ]] && exit 0
-[[ $(find ./a | wc -l) -gt 2 ]] && exit 0
+[[ -d ./a/lost+found ]] || exit 1
+[[ -d ./a/etc ]] && exit 1
+[[ $(find ./a | wc -l) -gt 2 ]] && exit 1
 
 debootstrap --include=vim,openssh-server,locales,bash-completion,lsof,rsync,dbus $DISTRIBUTION ./a
 chroot ./a
@@ -78,9 +78,6 @@ deb http://security.debian.org/debian-security ${DISTRIBUTION}-security main con
 deb http://mi.mirror.garr.it/mirrors/debian/ ${DISTRIBUTION}-updates main contrib non-free non-free-firmware
 EOF
 
-apt-get update
-apt-get install linux-image-cloud-amd64
-
 cat > /root/.bashrc <<EOF
 export PS1='\h 2023:\w\$ '
 umask 022
@@ -93,11 +90,14 @@ alias mv='mv -i'
 alias e='exit'
 EOF
 
+apt-get update
+apt-get install -y linux-image-cloud-amd64
+
 exit
 
 mkdir ./a/root/.ssh
 chmod 700 ./a/root/.ssh/
-rsync -av .ssh/authorized_keys ./a/root/.ssh
+rsync -av ~/.ssh/authorized_keys ./a/root/.ssh
 
 umount a  
 
