@@ -11,9 +11,9 @@ source ./new_host.cfg
 apt-get install debootstrap rsync
 
 echo "creating main /dev/${KVMGROUP}/${NEWHOST}"
-lvcreate -n ${NEWHOST:-pippo123} -L ${DISKSIZE:-15G} $KVMGROUP && mkfs.ext4 /dev/${KVMGROUP}/${NEWHOST:-pippo123}
+lvcreate -n ${NEWHOST} -L ${DISKSIZE} $KVMGROUP && mkfs.ext4 /dev/${KVMGROUP}/${NEWHOST}
 echo "creating swap /dev/${KVMGROUP}/${NEWHOST}"
-lvcreate -n ${NEWHOST:-pippo123}-swap -L ${SWAPSIZE:-6G} $KVMGROUP && mkswap /dev/${KVMGROUP}/${NEWHOST:-pippo123}-swap
+lvcreate -n ${NEWHOST}-swap -L ${SWAPSIZE} $KVMGROUP && mkswap /dev/${KVMGROUP}/${NEWHOST}-swap
 
 [[ -d ./a ]] || mkdir -v ./a
 mount -v /dev/kvmgroup/${NEWHOST:-pippo123} ./a
