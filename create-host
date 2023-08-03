@@ -75,9 +75,9 @@ EOF
 echo "ALL: ALL" > /etc/hosts.deny
 
 cat > /etc/apt/sources.list <<EOF
-deb http://debian.mirror.garr.it/debian/ $DISTRIBUTION main contrib non-free
-deb http://security.debian.org/debian-security ${DISTRIBUTION}-security main contrib non-free
-deb http://mi.mirror.garr.it/mirrors/debian/ ${DISTRIBUTION}-updates main contrib non-free
+deb http://debian.mirror.garr.it/debian/ $DISTRIBUTION main contrib non-free non-free-firmware
+deb http://security.debian.org/debian-security ${DISTRIBUTION}-security main contrib non-free non-free-firmware
+deb http://mi.mirror.garr.it/mirrors/debian/ ${DISTRIBUTION}-updates main contrib non-free non-free-firmware
 EOF
 
 apt-get update
