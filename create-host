@@ -2,17 +2,12 @@
 
 set -o errexit
 
-apt-get install debootstrap rsync
-
-export NEWHOST='str963-wilder'
-export IPADDRESS='137.204.134.60'
-export DISKSIZE='40G'
-export SWAPSIZE='6G'
-export KVMGROUP='kvmgroup'
-export DISTRIBUTION='bullseye'
-export DISTRIBUTION='bookworm'
+[[ -f ./new_host.cfg ]] || exit 0
+source ./new_host.cfg
 
 ([[ -z $NEWHOST ]] || [[ -z $DISKSIZE ]] || [[ -z $SWAPSIZE ]]) && exit 1
+
+apt-get install debootstrap rsync
 
 echo "creating main /dev/${KVMGROUP}/${NEWHOST}"
 lvcreate -n ${NEWHOST:-pippo123} -L ${DISKSIZE:-15G} $KVMGROUP && mkfs.ext4 /dev/${KVMGROUP}/${NEWHOST:-pippo123}
