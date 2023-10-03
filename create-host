@@ -89,6 +89,8 @@ sed -i -e 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' ./a/etc/ss
 echo "apt-get update && apt-get install -y linux-image-cloud-amd64" | chroot ./a
 cat ./chroot-script | chroot ./a
 
+echo "systemctl enable serial-getty@ttyS0.service && systemctl start serial-getty@ttyS0.service" | chroot ./a
+
 echo "Please provide a password for the new host"
 chroot ./a passwd root
 
