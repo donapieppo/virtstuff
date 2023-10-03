@@ -1,0 +1,42 @@
+#/sys/devices/system/cpu/vulnerabilities/l1tf
+#https://www.kernel.org/doc/html/latest/admin-guide/hw-vuln/l1tf.html
+
+apt-get install --no-install-recommends qemu-kvm libvirt-clients libvirt-daemon-system lvm2 ifenslave bridge-utils netcat-openbsd debootstrap python3-libvirt iptables
+
+auto br0
+iface br0 inet static
+  address 137.204.134.6/24
+  gateway 137.204.134.254
+  bridge_ports eno1
+  bridge_fd 0
+  bridge_stp off
+  bridge_maxwait 0
+
+auto br1
+iface br1 inet static
+  address 0.0.0.0
+  bridge_ports eno2
+  bridge_fd 0
+  bridge_stp off
+  bridge_maxwait 0
+
+auto br_lab
+iface br_lab inet static
+  address 0.0.0.0
+  bridge_ports eno4
+  bridge_fd 0
+  bridge_stp off
+  bridge_maxwait 0
+
+vgcreate kvmgroup /dev/sda3
+
+# sui vm
+# systemctl enable serial-getty@ttyS0.service && systemctl start serial-getty@ttyS0.service
+#  target /dev/kvmgroup
+#  source nulla
+#  Fill in the Target Path and Source Path fields, and check the Build Pool check box.
+#  Use the Target Path field to either select an existing LVM volume group or as the name for a new volume group. The default format is storage_pool_name/lvm_Volume_Group_name.
+#  This example uses a new volume group named /dev/guest_images_lvm.
+#  The Source Path field is optional if an existing LVM volume group is used in the Target Path.
+#  For new LVM volume groups, input the location of a storage device in the Source Path field. This example uses a blank partition /dev/sdc.
+
