@@ -6,6 +6,7 @@ host=$1
 disk=/dev/kvmgroup/$host
 dir=/root/mounts/$host
 snap=/dev/kvmgroup/snap
+remote_server=kvm13.dm.unibo.it
 
 [[ -z $host ]] && echo "Please give me a server." && exit 1
 
@@ -82,27 +83,27 @@ echo
 echo "IN KVM13"
 echo
 
-if `ssh kvm13 "[ -f ${dir}/etc/hosts ]"`
+if `ssh ${remote_server} "[ -f ${dir}/etc/hosts ]"`
 then
-	echo "KVM13 OK: montato file system esistente."
+	echo "${remote_server} OK: montato file system esistente."
 else
 	echo "KVM13: NO ${dir}/etc/hosts. SE PRIMO AVVIO CREA DA ZERO CON"
-	echo "rsync --delete -av /root/mounts/${host}/ kvm13:/root/mounts/${host}/"
+	echo "rsync --delete -av /root/mounts/${host}/ ${remote_server}:/root/mounts/${host}/"
 	exit 1
 fi
 
-if `ssh kvm13 "grep -q ${host} ${dir}/etc/hosts"` 
+if `ssh ${remote_server} "grep -q ${host} ${dir}/etc/hosts"` 
 then
-	echo "KVM13 OK: ${host} si trova in kvm13 nella cartella ${dir}/etc/hosts." 
+	echo "KVM13 OK: ${host} si trova in ${remote_server} nella cartella ${dir}/etc/hosts." 
 else
-        echo "kvm13: No ${host} in ${dir}/etc/hosts"
+        echo "${remote_server}: No ${host} in ${dir}/etc/hosts"
         exit 1
 fi
 
 sleep 2
 
-echo "ESEGUO: rsync --delete -av /root/mounts/${host}/ kvm13:/root/mounts/${host}/"
-rsync --delete -av /root/mounts/${host}/ kvm13:/root/mounts/${host}/ 
+echo "ESEGUO: rsync --delete -av /root/mounts/${host}/ ${remote_server}:/root/mounts/${host}/"
+rsync --delete -av /root/mounts/${host}/ ${remote_server}:/root/mounts/${host}/ 
 
 echo "ESEGUO: umount -v $snap && lvremove -f $snap"
 umount -v $snap && lvremove -f /dev/kvmgroup/snap
