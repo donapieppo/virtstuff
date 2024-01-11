@@ -9,7 +9,7 @@ source ./new_host.cfg
 
 [[ -b /dev/${KVMGROUP}/${NEWHOST} ]] && echo "EXISTS /dev/${KVMGROUP}/${NEWHOST}" && exit 1
 
-apt-get install -y debootstrap rsync
+apt-get install -y -q debootstrap rsync
 
 echo "creating main /dev/${KVMGROUP}/${NEWHOST} and swap /dev/${KVMGROUP}/${NEWHOST}"
 lvcreate -v -n ${NEWHOST} -L ${DISKSIZE} $KVMGROUP && mkfs.ext4 /dev/${KVMGROUP}/${NEWHOST}
@@ -23,7 +23,7 @@ mount -v /dev/kvmgroup/${NEWHOST} ./a
 [[ -d ./a/etc ]] && exit 1
 [[ $(find ./a | wc -l) -gt 2 ]] && exit 1
 
-debootstrap --include=vim,openssh-server,locales,bash-completion,lsof,rsync,dbus $DISTRIBUTION ./a
+debootstrap --include=vim,openssh-server,openssl,locales,bash-completion,lsof,rsync,dbus,curl,xz-utils,jq,tar,cs-certificates $DISTRIBUTION ./a
 
 echo "/dev/vda /    ext4    errors=remount-ro 0       1" >  ./a/etc/fstab
 echo "/dev/vdb none swap    sw                0       0" >> ./a/etc/fstab
@@ -66,7 +66,7 @@ deb http://mi.mirror.garr.it/mirrors/debian/ ${DISTRIBUTION}-updates main contri
 EOF
 
 cat > ./a/root/.bashrc <<EOF
-export PS1='\h 2023:\w\$ '
+export PS1='\h 2024:\w\$ '
 umask 022
 
 export LS_OPTIONS='--color=auto'
@@ -78,7 +78,7 @@ alias e='exit'
 EOF
 
 # authorized_keys
-mkdir ./a/root/.ssh
+[[ -d ./a/root/.ssh ]] || mkdir ./a/root/.ssh
 chmod 700 ./a/root/.ssh/
 rsync -av ~/.ssh/authorized_keys ./a/root/.ssh
 
@@ -89,7 +89,11 @@ sed -i -e 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' ./a/etc/ss
 echo "apt-get update && apt-get install -y linux-image-cloud-amd64" | chroot ./a
 cat ./chroot-script | chroot ./a
 
-echo "systemctl enable serial-getty@ttyS0.service && systemctl start serial-getty@ttyS0.service" | chroot ./a
+# symlink /etc/systemd/system/getty.target.wants/serial-getty@ttyS0.service → /lib/systemd/system/serial-getty@.service.
+# echo "systemctl enable serial-getty@ttyS0.service && systemctl start serial-getty@ttyS0.service" | chroot ./a
+cd a 
+ln -s lib/systemd/system/serial-getty@.service etc/systemd/system/getty.target.wants/serial-getty@ttyS0.service
+cd ..
 
 echo "Please provide a password for the new host"
 chroot ./a passwd root
