@@ -3,10 +3,11 @@
 set -o errexit
 
 host=$1
+remote_server=kvm13.dm.unibo.it
+
 disk=/dev/kvmgroup/$host
 dir=/root/mounts/$host
 snap=/dev/kvmgroup/snap
-remote_server=kvm13.dm.unibo.it
 
 [[ -z $host ]] && echo "Please give me a server." && exit 1
 
