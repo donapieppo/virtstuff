@@ -90,6 +90,7 @@ then
 else
 	echo "KVM13: NO ${dir}/etc/hosts. SE PRIMO AVVIO CREA DA ZERO CON"
 	echo "rsync --delete -av /root/mounts/${host}/ ${remote_server}:/root/mounts/${host}/"
+  echo "and after that umount /dev/kvmgroup/snap && lvremove /dev/kvmgroup/snap"
 	exit 1
 fi
 
@@ -97,8 +98,8 @@ if `ssh ${remote_server} "grep -q ${host} ${dir}/etc/hosts"`
 then
 	echo "KVM13 OK: ${host} si trova in ${remote_server} nella cartella ${dir}/etc/hosts." 
 else
-        echo "${remote_server}: No ${host} in ${dir}/etc/hosts"
-        exit 1
+  echo "${remote_server}: No ${host} in ${dir}/etc/hosts"
+  exit 1
 fi
 
 sleep 2
