@@ -23,7 +23,7 @@ mount -v /dev/kvmgroup/${NEWHOST} ./a
 [[ -d ./a/etc ]] && exit 1
 [[ $(find ./a | wc -l) -gt 2 ]] && exit 1
 
-debootstrap --include=vim,openssh-server,openssl,locales,bash-completion,lsof,rsync,dbus,curl,xz-utils,jq,tar,cs-certificates $DISTRIBUTION ./a
+debootstrap --include=vim,openssh-server,openssl,locales,bash-completion,lsof,rsync,dbus,curl,xz-utils,jq,tar,ca-certificates $DISTRIBUTION ./a
 
 echo "/dev/vda /    ext4    errors=remount-ro 0       1" >  ./a/etc/fstab
 echo "/dev/vdb none swap    sw                0       0" >> ./a/etc/fstab
