@@ -5,13 +5,16 @@ set -o errexit
 host=$1
 remote_server=kvm13.dm.unibo.it
 
-disk=/dev/kvmgroup/$host
-dir=/root/mounts/$host
+local_disk=/dev/kvmgroup/$host
+# comune in local and in remote_server
+source_dir=/root/mounts/$host
 snap=/dev/kvmgroup/snap
 
 [[ -z $host ]] && echo "Please give me a server." && exit 1
 
-echo "lvmirror $host from $disk mounted on $dir with snap $snap"
+echo "lvmirror $host from $local_disk mounted on $source_dir with snap $snap"
+echo "Tutto ok?"
+read ok
 
 function check_snap_absent() {
 	if [ -b $1 ]; then
@@ -34,7 +37,7 @@ function check_dir_presence() {
 	if [ -d $1 ]; then
 		echo "Dir $1 is OK"
 	else
-		echo "Missing dir $1"
+		echo "Missing source_dir $1"
 		exit 1
 	fi
 }
@@ -53,7 +56,7 @@ function check_no_lost_found_file {
 	fi
 }
 
-# pass host and dir
+# pass host and source_dir
 function check_hostname_in_etc_hosts() {
 	hosts_file="$2/etc/hosts"
 
@@ -70,35 +73,35 @@ function check_hostname_in_etc_hosts() {
 }
 
 check_snap_absent $snap
-check_symlink_presence $disk
-check_dir_presence $dir
+check_symlink_presence $local_disk
+check_dir_presence $source_dir
 check_no_kvmgroup_mount
-check_no_lost_found_file $dir
+check_no_lost_found_file $source_dir
 
-lvcreate --size 100M --snapshot --name snap $disk
-mount -o ro -v $snap $dir
+lvcreate --size 100M --snapshot --name snap $local_disk
+mount -o ro -v $snap $source_dir
 
-check_hostname_in_etc_hosts $host $dir
+check_hostname_in_etc_hosts $host $source_dir
 
 echo
 echo "IN KVM13"
 echo
 
-if `ssh ${remote_server} "[ -f ${dir}/etc/hosts ]"`
+if `ssh ${remote_server} "[ -f ${source_dir}/etc/hosts ]"`
 then
 	echo "${remote_server} OK: montato file system esistente."
 else
-	echo "KVM13: NO ${dir}/etc/hosts. SE PRIMO AVVIO CREA DA ZERO CON"
+	echo "KVM13: NO ${source_dir}/etc/hosts. SE PRIMO AVVIO CREA DA ZERO CON"
 	echo "rsync --delete -av /root/mounts/${host}/ ${remote_server}:/root/mounts/${host}/"
   echo "and after that umount /dev/kvmgroup/snap && lvremove /dev/kvmgroup/snap"
 	exit 1
 fi
 
-if `ssh ${remote_server} "grep -q ${host} ${dir}/etc/hosts"` 
+if `ssh ${remote_server} "grep -q ${host} ${source_dir}/etc/hosts"` 
 then
-	echo "KVM13 OK: ${host} si trova in ${remote_server} nella cartella ${dir}/etc/hosts." 
+	echo "KVM13 OK: ${host} si trova in ${remote_server} nella cartella ${source_dir}/etc/hosts." 
 else
-  echo "${remote_server}: No ${host} in ${dir}/etc/hosts"
+  echo "${remote_server}: No ${host} in ${source_dir}/etc/hosts"
   exit 1
 fi
 
